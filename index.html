@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Panorama Derecho INCCA — Percepción estudiantil</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚖️</text></svg>">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js" crossorigin="anonymous"></script>
+<style>
+  :root{
+    --blue:#0071e3; --blue-soft:#cfe6fd;
+    --green:#28cd66; --green-soft:#d3f5df;
+    --orange:#ff9f0a; --orange-soft:#ffe6c2;
+    --purple:#af52de; --purple-soft:#eeddf9;
+    --pink:#ff375f; --pink-soft:#ffdae2;
+    --teal:#32ade6; --teal-soft:#d3eefb;
+    --yellow:#ffd60a; --yellow-soft:#fff4c2;
+    --indigo:#5e5ce6; --indigo-soft:#e1e0fb;
+    --ink:#1d1d1f; --ink-soft:#6e6e73;
+    --bg:#f5f5f7; --card:#ffffff;
+    --line: rgba(0,0,0,.08);
+    padding-top: env(safe-area-inset-top,0px);
+    padding-bottom: env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box}
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --bg:#1c1c1e; --card:#2c2c2e; --ink:#f5f5f7; --ink-soft:#98989d; --line: rgba(255,255,255,.12);
+    }
+  }
+  :root[data-theme="dark"]{
+    --bg:#1c1c1e; --card:#2c2c2e; --ink:#f5f5f7; --ink-soft:#98989d; --line: rgba(255,255,255,.12);
+  }
+  html{scroll-padding-top:env(safe-area-inset-top,0px)}
+  body{
+    margin:0; background:var(--bg); color:var(--ink);
+    font-family:-apple-system,BlinkMacSystemFont,"SF Pro Display","SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  header{
+    padding:2.4rem 1.6rem 1.6rem;
+    max-width:1240px; margin:0 auto;
+    display:flex; flex-wrap:wrap; gap:1.2rem; align-items:flex-end; justify-content:space-between;
+  }
+  .title-block{max-width:640px}
+  .eyebrow{color:var(--blue); font-weight:600; font-size:.9rem; letter-spacing:.01em; margin:0 0 .3rem}
+  h1{font-size:clamp(1.7rem,3.2vw,2.5rem); font-weight:700; margin:0 0 .5rem; line-height:1.15; letter-spacing:-.01em}
+  .sub{color:var(--ink-soft); margin:0; font-size:1rem; line-height:1.5}
+  .actions{display:flex; gap:.6rem; flex-wrap:wrap; align-items:center}
+  button, .filebtn{
+    font-family:inherit; font-weight:600; font-size:.88rem;
+    border:1px solid var(--line); background:var(--card); color:var(--ink);
+    padding:.65rem 1.1rem; border-radius:12px; cursor:pointer;
+    transition:transform .15s ease, border-color .15s ease;
+  }
+  button:hover, .filebtn:hover{border-color:var(--blue); transform:translateY(-1px)}
+  .filebtn{background:var(--blue); border-color:var(--blue); color:#fff; position:relative; overflow:hidden}
+  .filebtn input{position:absolute; inset:0; opacity:0; cursor:pointer}
+  main{max-width:1240px; margin:0 auto; padding:0 1.6rem 3rem}
+
+  #fatalError{display:none; max-width:1240px; margin:0 auto; padding:0 1.6rem}
+  #fatalError .box{background:var(--pink-soft); border:1px solid var(--pink); color:#7a1030; border-radius:14px; padding:1rem 1.2rem; font-size:.9rem; line-height:1.5}
+
+  .kpis{display:grid; grid-template-columns:repeat(auto-fit,minmax(190px,1fr)); gap:1rem; margin:1.6rem 0}
+  .kpi{background:var(--card); border:1px solid var(--line); border-radius:18px; padding:1.2rem 1.3rem; position:relative; overflow:hidden}
+  .kpi::before{content:''; position:absolute; top:0; left:0; width:5px; height:100%}
+  .kpi.k1::before{background:var(--blue)} .kpi.k2::before{background:var(--green)}
+  .kpi.k3::before{background:var(--orange)} .kpi.k4::before{background:var(--purple)}
+  .kpi .num{font-size:2.1rem; font-weight:700; margin:0; letter-spacing:-.02em}
+  .kpi .lbl{color:var(--ink-soft); font-size:.82rem; margin:.25rem 0 0; line-height:1.35}
+
+  .grid{display:grid; grid-template-columns:repeat(12,1fr); gap:1rem}
+  .card{
+    background:var(--card); border:1px solid var(--line); border-radius:18px;
+    padding:1.3rem 1.4rem 1.1rem; min-width:0;
+  }
+  .card h2{font-size:1.05rem; font-weight:600; margin:0}
+  .card .hint{color:var(--ink-soft); font-size:.8rem; margin:0 0 .8rem}
+  .card-head{display:flex; align-items:flex-start; justify-content:space-between; gap:.6rem}
+  .infoBtn{flex:none; border:none; background:var(--line); color:var(--ink-soft); width:22px; height:22px; border-radius:50%; font-size:.72rem; font-weight:700; cursor:pointer; display:flex; align-items:center; justify-content:center; padding:0; font-family:inherit}
+  .infoBtn:hover{background:var(--blue); color:#fff}
+  .info-detail{display:none; background:var(--bg); border:1px solid var(--line); border-radius:10px; padding:.7rem .85rem; font-size:.8rem; color:var(--ink-soft); line-height:1.55; margin:.5rem 0 .9rem}
+  .info-detail.show{display:block}
+  .info-detail b{color:var(--ink); font-weight:600}
+  .span4{grid-column:span 4} .span6{grid-column:span 6} .span8{grid-column:span 8} .span12{grid-column:span 12}
+  @media (max-width:900px){ .span4,.span6,.span8{grid-column:span 12} }
+  .chart-wrap{position:relative; height:260px}
+  .chart-wrap.tall{height:320px}
+  .chart-empty{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; color:var(--ink-soft); font-size:.85rem; text-align:center; padding:1rem}
+
+  .gauge-wrap{display:flex; align-items:center; gap:1.4rem; flex-wrap:wrap}
+  .gauge-num{font-size:2.6rem; font-weight:700; margin:0; letter-spacing:-.02em}
+  .gauge-legend{display:flex; flex-direction:column; gap:.35rem; font-size:.85rem; color:var(--ink-soft)}
+  .dot{display:inline-block; width:9px; height:9px; border-radius:50%; margin-right:.4rem}
+
+  footer{max-width:1240px; margin:0 auto; padding:0 1.6rem 3rem; color:var(--ink-soft); font-size:.82rem; line-height:1.6}
+  .status{font-size:.8rem; padding:.4rem .8rem; border-radius:10px; background:var(--green-soft); color:#1a6b34; display:none; font-weight:600}
+  .status.show{display:inline-block}
+  .status.err{background:var(--pink-soft); color:#7a1030}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="title-block">
+    <p class="eyebrow">Programa de Derecho · Universidad INCCA</p>
+    <h1>Panorama de percepción estudiantil</h1>
+    <p class="sub">Lectura agregada y anónima de la encuesta de percepción. Nunca se muestran nombres, correos ni códigos individuales — solo conteos y promedios.</p>
+  </div>
+  <div class="actions">
+    <span id="status" class="status"></span>
+    <span id="lastSync" class="hint" style="color:var(--ink-soft);font-size:.8rem"></span>
+    <button id="refreshBtn" title="Volver a leer la hoja de Google en vivo">🔄 Actualizar datos</button>
+  </div>
+</header>
+
+<div id="fatalError"><div class="box"></div></div>
+
+<main id="mainContent">
+
+  <section class="kpis" id="kpis"></section>
+  <p id="sourceNote" style="color:var(--ink-soft);font-size:.82rem;margin:-1rem 0 1rem"></p>
+
+  <section class="grid">
+    <div class="card span6">
+      <div class="card-head"><h2>Calidad de la enseñanza</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Calificación de 1 (baja) a 5 (excelente) — Pregunta 1</p>
+      <p class="info-detail"><b>Pregunta original:</b> "¿Cómo califica la calidad de la enseñanza impartida por los docentes del programa de Derecho?" Mide, en una escala de 1 a 5, qué tan bien perciben los estudiantes el desempeño de los profesores en el aula.</p>
+      <div class="chart-wrap" id="wrapP1"><canvas id="chartP1"></canvas></div>
+    </div>
+
+    <div class="card span6">
+      <div class="card-head"><h2>Satisfacción con el contenido académico</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Pregunta 2</p>
+      <p class="info-detail"><b>Pregunta original:</b> "En general, ¿qué tan satisfecho se encuentra con el contenido de las asignaturas y el aprendizaje adquirido en su carrera?" Refleja la valoración global del plan académico, más allá de un solo docente o materia.</p>
+      <div class="chart-wrap" id="wrapP2"><canvas id="chartP2"></canvas></div>
+    </div>
+
+    <div class="card span6">
+      <div class="card-head"><h2>Panorama general de percepción</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Promedio (0–5) en enseñanza, comunicación, precio-calidad y reputación</p>
+      <p class="info-detail">Combina cuatro promedios en una sola vista: <b>Enseñanza</b> (Pregunta 1), <b>Comunicación</b> — satisfacción con los canales para resolver dificultades (Pregunta 5), <b>Precio–calidad</b> — si el costo de la matrícula se siente justo frente al servicio recibido (Pregunta 10), y <b>Reputación</b> — qué tan de acuerdo están con que la universidad goza de buen prestigio (Pregunta 11). Un radar más "inflado" indica mejor percepción general.</p>
+      <div class="chart-wrap tall" id="wrapRadar"><canvas id="chartRadar"></canvas></div>
+    </div>
+
+    <div class="card span6">
+      <div class="card-head"><h2>¿Recomendaría el programa?</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Estilo NPS a partir de la Pregunta 12 (0–10)</p>
+      <p class="info-detail"><b>Pregunta original:</b> "Basado en su experiencia global (académica, administrativa y económica), ¿recomendaría estudiar Derecho en la Universidad INCCA a un familiar o amigo?" (0 a 10). Se agrupa como en el índice NPS: <b>promotores</b> (9–10) recomiendan activamente, <b>pasivos</b> (7–8) están conformes pero sin entusiasmo, <b>detractores</b> (0–6) no recomendarían el programa. El puntaje es el % de promotores menos el % de detractores.</p>
+      <div class="gauge-wrap">
+        <div class="chart-wrap" id="wrapGauge" style="height:180px;width:180px;flex:none"><canvas id="chartGauge"></canvas></div>
+        <div>
+          <p class="gauge-num" id="npsScore">—</p>
+          <div class="gauge-legend">
+            <span><i class="dot" style="background:var(--green)"></i>Promotores (9–10): <b id="npsProm">—</b></span>
+            <span><i class="dot" style="background:var(--yellow)"></i>Pasivos (7–8): <b id="npsPas">—</b></span>
+            <span><i class="dot" style="background:var(--pink)"></i>Detractores (0–6): <b id="npsDet">—</b></span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card span4">
+      <div class="card-head"><h2>Cumplimiento del plan de estudios</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Pregunta 3</p>
+      <p class="info-detail"><b>Pregunta original:</b> "¿Considera que la Universidad ha cumplido cabalmente con el plan de estudios propuesto al momento de su matrícula?" Compara lo prometido al matricularse contra lo efectivamente entregado.</p>
+      <div class="chart-wrap" id="wrapP3"><canvas id="chartP3"></canvas></div>
+    </div>
+
+    <div class="card span4">
+      <div class="card-head"><h2>Canales usados para reclamar</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Pregunta 6 (respuesta múltiple)</p>
+      <p class="info-detail"><b>Pregunta original:</b> "¿Qué canales ha utilizado para elevar quejas, solicitudes o derechos de petición en la institución?" (puede marcar varios). Muestra por qué vías acuden más los estudiantes: mesa de ayuda, correo institucional, derechos de petición formales o atención presencial.</p>
+      <div class="chart-wrap" id="wrapP6"><canvas id="chartP6"></canvas></div>
+    </div>
+
+    <div class="card span4">
+      <div class="card-head"><h2>Tiempo de respuesta institucional</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Pregunta 7</p>
+      <p class="info-detail"><b>Pregunta original:</b> "Según su experiencia, ¿cuál es el tiempo promedio que tarda la Universidad en dar respuesta a sus solicitudes formales?" Percepción del estudiante sobre la agilidad administrativa, no un dato medido internamente.</p>
+      <div class="chart-wrap" id="wrapP7"><canvas id="chartP7"></canvas></div>
+    </div>
+
+    <div class="card span6">
+      <div class="card-head"><h2>Resultado habitual de las solicitudes</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Pregunta 8</p>
+      <p class="info-detail"><b>Pregunta original:</b> "Frente a las solicitudes o dificultades que ha reportado, ¿cuál ha sido el resultado habitual?" Indica si las gestiones realmente se resuelven, y por qué vía (respuesta institucional, solución externa, o sin solución).</p>
+      <div class="chart-wrap" id="wrapP8"><canvas id="chartP8"></canvas></div>
+    </div>
+
+    <div class="card span6">
+      <div class="card-head"><h2>Trámites pendientes a la fecha</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Pregunta 9</p>
+      <p class="info-detail"><b>Pregunta original:</b> "A la fecha, ¿tiene algún trámite o requerimiento pendiente por ser resuelto por parte de la Universidad?" Fotografía del volumen de casos abiertos al momento de responder la encuesta (académicos, administrativos o ambos).</p>
+      <div class="chart-wrap" id="wrapP9"><canvas id="chartP9"></canvas></div>
+    </div>
+
+    <div class="card span6">
+      <div class="card-head"><h2>Relación costo de matrícula / calidad del servicio</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Pregunta 10 (1–5)</p>
+      <p class="info-detail"><b>Pregunta original:</b> "¿Considera que existe una relación justa entre el costo económico de la matrícula y la calidad del servicio educativo/administrativo recibido?" De 1 (nada justa) a 5 (totalmente justa).</p>
+      <div class="chart-wrap" id="wrapP10"><canvas id="chartP10"></canvas></div>
+    </div>
+
+    <div class="card span6">
+      <div class="card-head"><h2>Reputación de la universidad</h2><button class="infoBtn" onclick="toggleInfo(this)" aria-label="Ver contexto">ⓘ</button></div>
+      <p class="hint">Pregunta 11</p>
+      <p class="info-detail"><b>Pregunta original:</b> "En cuanto al valor reputacional, ¿qué tan de acuerdo está con la siguiente afirmación: 'Considero que la Universidad INCCA goza de una buena reputación y prestigio en el país como institución de educación superior'?"</p>
+      <div class="chart-wrap" id="wrapP11"><canvas id="chartP11"></canvas></div>
+    </div>
+  </section>
+</main>
+
+<footer>
+  <p><b id="totalResp">—</b> respuestas analizadas · Datos agregados y anonimizados — este tablero nunca guarda ni muestra información personal identificable.
+  Se conecta en vivo a una pestaña de Google Sheets que solo contiene el grupo y las respuestas a las 12 preguntas (sin nombre, correo ni código de estudiante), así que cualquier persona que abra este enlace ve la misma información actualizada, sin necesidad de subir archivos. Se refresca automáticamente cada 5 minutos, o al pulsar "Actualizar datos".</p>
+</footer>
+
+<script>
+/* ==========================================================
+   CONFIGURACIÓN
+   1) SHEET_ID: ábrela en Google Sheets, ve a la pestaña "Publico"
+      y copia el ID que aparece en la URL de EDICIÓN (no la de
+      "Publicar en la web"), así:
+      docs.google.com/spreadsheets/d/ESTE_ES_EL_ID/edit#gid=...
+   2) SHEET_NAME: el nombre exacto de la pestaña que solo tiene
+      Grupo + las 12 preguntas (por defecto "Publico").
+   ========================================================== */
+var SHEET_ID   = "PON_AQUI_TU_SHEET_ID";
+var SHEET_NAME = "Publico";
+/* ========================================================== */
+
+/* ---------- Datos base (agregados, anonimizados) — se usan si aún no configuraste Google Sheets, o como respaldo si la hoja no responde ---------- */
+var DEFAULT_DATA = {"n": 24, "grupo": {"39": 16, "38": 5, "Derecho grupo 39": 1, "Grupo 39": 1, "37": 1}, "p1": {"4": 16, "5": 8}, "p2": {"Satisfecho": 15, "Muy satisfecho": 6, "Neutral": 3}, "p3": {"De acuerdo": 13, "Totalmente de acuerdo (Se ha cumplido todo lo prometido)": 6, "Neutral": 2, "Totalmente en desacuerdo (Existen muchos vac\u00edos o cambios injustificados)": 2, "En desacuerdo": 1}, "p4": {"Me faltan materias o tengo retrasos por problemas exclusivamente administrativos de la Universidad.": 13, "Estoy al d\u00eda con todas mis materias.": 7, "Me faltan materias o tengo retrasos por cuestiones acad\u00e9micas propias (reprobaci\u00f3n, aplazamiento).": 3, "Materia r\u00e9gimen del servidor p\u00fablico": 1}, "p5": {"1": 1, "2": 2, "3": 8, "4": 11, "5": 2}, "p6": {"Sistema de Tickets / Mesa de ayuda": 21, "Correo electr\u00f3nico institucional": 16, "Derechos de petici\u00f3n formales": 5, "Atenci\u00f3n presencial en oficinas": 9}, "p7": {"Moderado (4 a 15 d\u00edas h\u00e1biles)": 15, "Lento (M\u00e1s de 15 d\u00edas h\u00e1biles)": 4, "Nunca responden": 3, "R\u00e1pido (1 a 3 d\u00edas h\u00e1biles)": 2}, "p8": {"Me respondieron y solucionaron mi requerimiento.": 15, "No me respondieron, pero el problema se solucion\u00f3.": 3, "Me respondieron, pero NO me dieron soluci\u00f3n.": 3, "No me respondieron y tampoco se solucion\u00f3.": 2, "Tuve que solucionarlo por otros medios (Visita directa a la Universidad, acciones legales, tutelas, etc.).": 1}, "p9": {"No, actualmente no tengo tr\u00e1mites pendientes.": 13, "S\u00ed, de orden estrictamente acad\u00e9mico (notas, materias, grados).": 9, "S\u00ed, ambos (acad\u00e9mico y administrativo).": 2}, "p10": {"3": 3, "4": 8, "5": 13}, "p11": {"De acuerdo": 13, "Totalmente de acuerdo": 7, "Ni de acuerdo ni en desacuerdo": 4}, "p12": {"10": 9, "2": 2, "3": 1, "7": 1, "8": 6, "9": 5}, "avg_p1": 4.33, "avg_p5": 3.46, "avg_p10": 4.42, "avg_p12": 8.21, "nps": {"promotores": 14, "pasivos": 7, "detractores": 3, "score": 45.8}};
+
+var STORAGE_KEY = 'incca_derecho_dashboard_v2';
+var PALETTE = ['#0071e3','#28cd66','#ff9f0a','#af52de','#ff375f','#32ade6','#ffd60a','#5e5ce6'];
+var charts = {};
+
+/* ---------- Contexto de cada pregunta (botón ⓘ) ---------- */
+function toggleInfo(btn){
+  var card = btn.closest('.card');
+  if(!card) return;
+  var detail = card.querySelector('.info-detail');
+  if(detail) detail.classList.toggle('show');
+}
+
+/* ---------- Manejo de errores visible ---------- */
+function showFatal(msg){
+  var box = document.querySelector('#fatalError .box');
+  box.textContent = '⚠️ ' + msg;
+  document.getElementById('fatalError').style.display = 'block';
+}
+window.addEventListener('error', function(e){
+  console.error('Error capturado:', e.message, e.error);
+});
+
+/* ---------- Utilidades de agregación desde una fila cruda ---------- */
+function findCol(headers, n){
+  for(var i=0;i<headers.length;i++){
+    var h = headers[i];
+    if(h && String(h).trim().toLowerCase().indexOf('pregunta ' + n + ':') === 0) return h;
+  }
+  return null;
+}
+function countValues(rows, col){
+  var out = {};
+  rows.forEach(function(r){
+    var v = r[col];
+    if(v===undefined || v===null || String(v).trim()==='') return;
+    v = String(v).trim();
+    out[v] = (out[v]||0)+1;
+  });
+  return out;
+}
+function countMulti(rows, col){
+  var out = {};
+  rows.forEach(function(r){
+    var v = r[col];
+    if(!v) return;
+    String(v).split(',').forEach(function(part){
+      var p = part.trim();
+      if(p) out[p] = (out[p]||0)+1;
+    });
+  });
+  return out;
+}
+function avgNumeric(rows, col){
+  var vals = rows.map(function(r){ return parseFloat(r[col]); }).filter(function(v){ return !isNaN(v); });
+  if(!vals.length) return null;
+  var sum = vals.reduce(function(a,b){ return a+b; }, 0);
+  return Math.round((sum/vals.length)*100)/100;
+}
+
+function buildAggFromRows(rows){
+  var headers = Object.keys(rows[0]||{});
+  var colMap = {};
+  for(var i=1;i<=12;i++) colMap[i] = findCol(headers, i);
+  if(!colMap[1] || !colMap[2]){
+    throw new Error('No se encontraron las columnas "Pregunta 1" y "Pregunta 2" en el archivo.');
+  }
+  var groupCol = headers.find(function(h){ return h && String(h).toLowerCase().indexOf('grupo') !== -1; });
+  var data = { n: rows.length };
+  data.grupo = groupCol ? countValues(rows, groupCol) : {};
+  data.p1 = countValues(rows, colMap[1]);
+  data.p2 = countValues(rows, colMap[2]);
+  data.p3 = countValues(rows, colMap[3]);
+  data.p4 = countValues(rows, colMap[4]);
+  data.p5 = countValues(rows, colMap[5]);
+  data.p6 = countMulti(rows, colMap[6]);
+  data.p7 = countValues(rows, colMap[7]);
+  data.p8 = countValues(rows, colMap[8]);
+  data.p9 = countValues(rows, colMap[9]);
+  data.p10 = countValues(rows, colMap[10]);
+  data.p11 = countValues(rows, colMap[11]);
+  data.p12 = countValues(rows, colMap[12]);
+  data.avg_p1 = avgNumeric(rows, colMap[1]);
+  data.avg_p5 = avgNumeric(rows, colMap[5]);
+  data.avg_p10 = avgNumeric(rows, colMap[10]);
+  data.avg_p12 = avgNumeric(rows, colMap[12]);
+  var v12 = rows.map(function(r){ return parseFloat(r[colMap[12]]); }).filter(function(v){ return !isNaN(v); });
+  var prom = v12.filter(function(v){ return v>=9; }).length;
+  var pas = v12.filter(function(v){ return v>=7 && v<=8; }).length;
+  var det = v12.filter(function(v){ return v<=6; }).length;
+  data.nps = { promotores:prom, pasivos:pas, detractores:det,
+    score: v12.length ? Math.round(((prom-det)/v12.length)*1000)/10 : 0 };
+  return data;
+}
+
+/* ---------- Render helpers ---------- */
+function sortNumericKeys(obj){
+  return Object.keys(obj).sort(function(a,b){
+    var na=parseFloat(a), nb=parseFloat(b);
+    if(!isNaN(na) && !isNaN(nb)) return na-nb;
+    return a.localeCompare(b);
+  });
+}
+function destroyChart(id){ if(charts[id]){ charts[id].destroy(); delete charts[id]; } }
+function getInk(){ return getComputedStyle(document.documentElement).getPropertyValue('--ink').trim() || '#1d1d1f'; }
+function getInkSoft(){ return getComputedStyle(document.documentElement).getPropertyValue('--ink-soft').trim(); }
+function gridColor(){ return getComputedStyle(document.documentElement).getPropertyValue('--line').trim(); }
+
+function setEmpty(wrapId, isEmpty){
+  var wrap = document.getElementById(wrapId);
+  if(!wrap) return;
+  var msg = wrap.querySelector('.chart-empty');
+  if(isEmpty){
+    if(!msg){ msg = document.createElement('div'); msg.className='chart-empty'; msg.textContent='Sin datos suficientes para este gráfico.'; wrap.appendChild(msg); }
+    msg.style.display='flex';
+  } else if(msg){ msg.style.display='none'; }
+}
+
+function renderDonut(id, wrapId, obj){
+  destroyChart(id);
+  var keys = Object.keys(obj||{});
+  if(!keys.length){ setEmpty(wrapId, true); return; }
+  setEmpty(wrapId, false);
+  var values = keys.map(function(k){ return obj[k]; });
+  var ctx = document.getElementById(id);
+  charts[id] = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels: keys, datasets:[{ data:values, backgroundColor:PALETTE, borderColor: getComputedStyle(document.documentElement).getPropertyValue('--card').trim() || '#fff', borderWidth:2, hoverOffset:8 }]},
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'62%',
+      plugins:{ legend:{ position:'bottom', labels:{color:getInk(),boxWidth:11,padding:10,font:{size:11}} } } }
+  });
+}
+function wrapLabel(s){
+  s = String(s);
+  if(s.length<=26) return s;
+  var words = s.split(' ');
+  var lines=[], cur='';
+  words.forEach(function(w){
+    if((cur+' '+w).trim().length>26){ lines.push(cur.trim()); cur=w; } else { cur+=' '+w; }
+  });
+  if(cur.trim()) lines.push(cur.trim());
+  return lines;
+}
+function renderBar(id, wrapId, obj, opts){
+  opts = opts || {};
+  destroyChart(id);
+  var keys = opts.sortNumeric ? sortNumericKeys(obj) : Object.keys(obj||{});
+  if(!keys.length){ setEmpty(wrapId, true); return; }
+  setEmpty(wrapId, false);
+  var values = keys.map(function(k){ return obj[k]; });
+  var labels = opts.wrap ? keys.map(wrapLabel) : keys;
+  var ctx = document.getElementById(id);
+  charts[id] = new Chart(ctx, {
+    type:'bar',
+    data:{ labels: labels, datasets:[{ data:values, backgroundColor: opts.color || PALETTE[0], borderRadius:8, maxBarThickness:46 }]},
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      indexAxis: opts.horizontal ? 'y' : 'x',
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ ticks:{color:getInkSoft(),font:{size:11}}, grid:{color:gridColor()}, beginAtZero:true },
+        y:{ ticks:{color:getInkSoft(),font:{size:11}}, grid:{color:gridColor()}, beginAtZero:true }
+      }
+    }
+  });
+}
+
+function renderRadar(data){
+  destroyChart('chartRadar');
+  var ctx = document.getElementById('chartRadar');
+  var ensenanza = data.avg_p1 || 0;
+  var comunicacion = data.avg_p5 || 0;
+  var precioCalidad = data.avg_p10 || 0;
+  var repMap = [
+    ['totalmente en desacuerdo',1],
+    ['en desacuerdo',2],
+    ['ni de acuerdo ni en desacuerdo',3],
+    ['totalmente de acuerdo',5],
+    ['de acuerdo',4]
+  ];
+  var repSum=0, repN=0;
+  Object.keys(data.p11||{}).forEach(function(k){
+    var kl = k.toLowerCase();
+    for(var i=0;i<repMap.length;i++){
+      if(kl.indexOf(repMap[i][0]) === 0){ repSum += repMap[i][1]*data.p11[k]; repN += data.p11[k]; break; }
+    }
+  });
+  var reputacion = repN ? Math.round((repSum/repN)*100)/100 : 0;
+  charts.chartRadar = new Chart(ctx, {
+    type:'radar',
+    data:{
+      labels:['Enseñanza','Comunicación','Precio–calidad','Reputación'],
+      datasets:[{
+        label:'Promedio (0–5)',
+        data:[ensenanza, comunicacion, precioCalidad, reputacion],
+        backgroundColor:'rgba(0,113,227,.18)',
+        borderColor:'#0071e3', borderWidth:2,
+        pointBackgroundColor:'#0071e3', pointRadius:4
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{ r:{ min:0, max:5, ticks:{stepSize:1, color:getInkSoft(), backdropColor:'transparent'},
+        grid:{color:gridColor()}, angleLines:{color:gridColor()}, pointLabels:{color:getInk(), font:{size:12}} } }
+    }
+  });
+}
+
+function renderGauge(nps){
+  destroyChart('chartGauge');
+  var ctx = document.getElementById('chartGauge');
+  charts.chartGauge = new Chart(ctx, {
+    type:'doughnut',
+    data:{ labels:['Promotores','Pasivos','Detractores'],
+      datasets:[{ data:[nps.promotores, nps.pasivos, nps.detractores],
+        backgroundColor:['#28cd66','#ffd60a','#ff375f'], borderWidth:0 }]},
+    options:{ responsive:true, maintainAspectRatio:false, cutout:'70%', rotation:-90, circumference:180,
+      plugins:{ legend:{display:false} } }
+  });
+  document.getElementById('npsScore').textContent = (nps.score>0?'+':'') + nps.score;
+  document.getElementById('npsProm').textContent = nps.promotores;
+  document.getElementById('npsPas').textContent = nps.pasivos;
+  document.getElementById('npsDet').textContent = nps.detractores;
+}
+
+function renderKPIs(data){
+  var el = document.getElementById('kpis');
+  var totalP2 = Object.values(data.p2||{}).reduce(function(a,b){ return a+b; }, 0);
+  var satisfechoPct = totalP2 ? Math.round((((data.p2['Satisfecho']||0) + (data.p2['Muy satisfecho']||0)) / totalP2) * 100) : 0;
+  el.innerHTML =
+    '<div class="kpi k1"><p class="num">' + (data.avg_p1 != null ? data.avg_p1 : '—') + '<span style="font-size:1rem;color:var(--ink-soft)"> / 5</span></p><p class="lbl">Calidad de la enseñanza (promedio)</p></div>' +
+    '<div class="kpi k2"><p class="num">' + satisfechoPct + '%</p><p class="lbl">Satisfechos o muy satisfechos con el contenido académico</p></div>' +
+    '<div class="kpi k3"><p class="num">' + (data.avg_p12 != null ? data.avg_p12 : '—') + '<span style="font-size:1rem;color:var(--ink-soft)"> / 10</span></p><p class="lbl">Disposición a recomendar el programa</p></div>' +
+    '<div class="kpi k4"><p class="num">' + (data.avg_p10 != null ? data.avg_p10 : '—') + '<span style="font-size:1rem;color:var(--ink-soft)"> / 5</span></p><p class="lbl">Percepción precio de matrícula vs. calidad del servicio</p></div>';
+  document.getElementById('totalResp').textContent = data.n;
+}
+
+/* Cada gráfico se dibuja en su propio try/catch para que un fallo puntual
+   no impida que se vean los demás. */
+function safe(label, fn){
+  try{ fn(); }
+  catch(err){ console.error('Error en "' + label + '":', err); }
+}
+
+function renderAll(data){
+  safe('KPIs', function(){ renderKPIs(data); });
+  safe('P1', function(){ renderBar('chartP1','wrapP1', data.p1, {sortNumeric:true, color:'#0071e3'}); });
+  safe('P2', function(){ renderDonut('chartP2','wrapP2', data.p2); });
+  safe('Radar', function(){ renderRadar(data); });
+  safe('Gauge', function(){ renderGauge(data.nps || {promotores:0,pasivos:0,detractores:0,score:0}); });
+  safe('P3', function(){ renderDonut('chartP3','wrapP3', data.p3); });
+  safe('P6', function(){ renderBar('chartP6','wrapP6', data.p6, {horizontal:true, wrap:true, color:'#28cd66'}); });
+  safe('P7', function(){ renderDonut('chartP7','wrapP7', data.p7); });
+  safe('P8', function(){ renderBar('chartP8','wrapP8', data.p8, {horizontal:true, wrap:true, color:'#ff9f0a'}); });
+  safe('P9', function(){ renderDonut('chartP9','wrapP9', data.p9); });
+  safe('P10', function(){ renderBar('chartP10','wrapP10', data.p10, {sortNumeric:true, color:'#32ade6'}); });
+  safe('P11', function(){ renderDonut('chartP11','wrapP11', data.p11); });
+}
+
+/* ---------- Sincronización en vivo con Google Sheets ---------- */
+function showStatus(msg, isErr){
+  var s = document.getElementById('status');
+  s.textContent = msg;
+  s.className = 'status show' + (isErr?' err':'');
+  setTimeout(function(){ s.classList.remove('show'); }, 4500);
+}
+function isConfigured(){
+  return SHEET_ID && SHEET_ID.indexOf('PON_AQUI') === -1 && SHEET_ID.length > 10;
+}
+function sheetCsvUrl(){
+  return 'https://docs.google.com/spreadsheets/d/' + SHEET_ID + '/gviz/tq?tqx=out:csv&sheet=' + encodeURIComponent(SHEET_NAME);
+}
+function setLastSync(ok){
+  var el = document.getElementById('lastSync');
+  var now = new Date();
+  var time = now.toLocaleTimeString('es-CO', {hour:'2-digit', minute:'2-digit'});
+  el.textContent = ok ? ('Datos en vivo · actualizado ' + time) : ('Sin conexión a la hoja · mostrando datos de ejemplo');
+}
+function setSourceNote(live){
+  document.getElementById('sourceNote').textContent = live
+    ? 'Fuente: hoja de respuestas de Google Forms (en vivo, solo datos agregados).'
+    : 'Mostrando datos de ejemplo — el tablero aún no está conectado a la hoja de Google en vivo.';
+}
+
+function syncFromSheet(isManualClick){
+  if(!isConfigured()){
+    renderAll(DEFAULT_DATA);
+    setSourceNote(false);
+    setLastSync(false);
+    if(isManualClick) showStatus('Falta configurar SHEET_ID en el archivo.', true);
+    return;
+  }
+  if(isManualClick) showStatus('Actualizando…', false);
+  fetch(sheetCsvUrl(), {cache:'no-store'})
+    .then(function(res){
+      if(!res.ok) throw new Error('La hoja respondió con estado ' + res.status + '. Verifica que esté publicada como "Cualquiera con el enlace puede ver".');
+      return res.text();
+    })
+    .then(function(csvText){
+      if(/#ERROR!|#REF!|#NAME\?/.test(csvText)){
+        throw new Error('La hoja publicada tiene un error de fórmula (revisa la pestaña "Publico" en Google Sheets y corrige la fórmula antes de continuar).');
+      }
+      var wb = XLSX.read(csvText, {type:'string'});
+      var sheet = wb.Sheets[wb.SheetNames[0]];
+      var rows = XLSX.utils.sheet_to_json(sheet, {defval:''});
+      if(!rows.length) throw new Error('La hoja publicada no tiene filas de datos.');
+      var agg = buildAggFromRows(rows);
+      renderAll(agg);
+      setSourceNote(true);
+      setLastSync(true);
+      if(isManualClick) showStatus('✓ Datos actualizados (' + agg.n + ' respuestas)', false);
+    })
+    .catch(function(err){
+      console.error(err);
+      renderAll(DEFAULT_DATA);
+      setSourceNote(false);
+      setLastSync(false);
+      showStatus('No se pudo leer la hoja en vivo: ' + err.message, true);
+    });
+}
+
+document.getElementById('refreshBtn').addEventListener('click', function(){
+  syncFromSheet(true);
+});
+
+/* ---------- Init ---------- */
+function init(){
+  if(typeof Chart === 'undefined'){
+    showFatal('No se pudo cargar la librería de gráficos (Chart.js) desde el CDN. Revisa tu conexión a internet o si un bloqueador de contenido está impidiendo la carga de cdnjs.cloudflare.com, y recarga la página.');
+    return;
+  }
+  syncFromSheet(false);
+  // Vuelve a consultar la hoja cada 5 minutos para que quede al día sin recargar la página.
+  setInterval(function(){ syncFromSheet(false); }, 5 * 60 * 1000);
+}
+if(document.readyState === 'loading'){
+  document.addEventListener('DOMContentLoaded', init);
+} else {
+  init();
+}
+</script>
+</body>
+</html>
